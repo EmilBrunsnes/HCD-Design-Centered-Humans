@@ -47,6 +47,14 @@ movement_dict = {
     pygame.K_d : [1,0]
 }
 
+color_dict = {
+    pygame.K_r: (255,0,0),
+    pygame.K_g: (0,255,0),
+    pygame.K_b: (0,0,255),
+    pygame.K_t: (0, 255, 255),
+    pygame.K_w: (255,255,255)
+}
+
 while running:
     window.fill((255,255,255))
     window.blit(canvas, (0,0))
@@ -59,8 +67,8 @@ while running:
             sys.exit()
             
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_e:
-                drawer.draw((255,0,0))
+            if event.key in color_dict:
+                drawer.draw(color_dict[event.key])
             
                 
     keys = pygame.key.get_pressed()
@@ -69,6 +77,6 @@ while running:
         if keys[key]:
             drawer.move(direction)
                 
-    clock.tick(30)
+    clock.tick(10)
 pygame.quit()
 
