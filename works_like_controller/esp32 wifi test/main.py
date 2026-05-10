@@ -1,3 +1,4 @@
+import json
 import network
 import uasyncio as asyncio
 import sys
@@ -37,25 +38,25 @@ def move_right():
     global cursor_position
     if cursor_position[0] < MATRIX_SIZE[0] - 1:
         cursor_position = (cursor_position[0] + 1, cursor_position[1])
-    print(f"Moved right to {cursor_position}")
+    #print(f"Moved right to {cursor_position}")
 
 def move_left():
     global cursor_position
     if cursor_position[0] > 0:
         cursor_position = (cursor_position[0] - 1, cursor_position[1])
-    print(f"Moved left to {cursor_position}")
+    #print(f"Moved left to {cursor_position}")
 
 def move_up():
     global cursor_position
     if cursor_position[1] > 0:
         cursor_position = (cursor_position[0], cursor_position[1] - 1)
-    print(f"Moved up to {cursor_position}")
+    #print(f"Moved up to {cursor_position}")
 
 def move_down():
     global cursor_position
     if cursor_position[1] < MATRIX_SIZE[1] - 1:
         cursor_position = (cursor_position[0], cursor_position[1] + 1)
-    print(f"Moved down to {cursor_position}")
+    #print(f"Moved down to {cursor_position}")
 
 
 async def handle_client(reader, writer):
@@ -118,16 +119,34 @@ async def handle_client(reader, writer):
             await writer.drain()
 
             while True:
-                if not ready_to_send:
-                    if cursor_position != last_position:
-                        payload = b"{'t':'m', 'x':%d,'y':%d,'c':%d}" % (cursor_position[0], cursor_position[1], 0) # Send cursor position updates
-                        last_position = cursor_position
+                data_dict = None
 
-                else:
-                    payload = b'{"t":"p","x":%d,"y":%d,"c":%d}' % (cursor_position[0], cursor_position[1], "r")
+                if ready_to_send:
+                    data_dict = {
+                        "t": "p",
+                        "x": cursor_position[0],
+                        "y": cursor_position[1],
+                        "c": "r"
+                    }
+                    print("Sent pixel")
                     ready_to_send = False
-                writer.write(payload)
-                await writer.drain()
+                
+                elif cursor_position != last_position:
+                    data_dict = {
+                        "t": "m",
+                        "x": cursor_position[0],
+                        "y": cursor_position[1],
+                        "c": 0
+                    }
+                    print(f"Changed position to {cursor_position}")
+                    last_position = cursor_position
+
+                if data_dict is not None:
+                    print("--> sent")
+                    payload = json.dumps(data_dict)
+                    sse_message = f"data: {payload}\n\n"
+                    writer.write(sse_message.encode("utf-8"))
+                    await writer.drain()
 
                 await asyncio.sleep_ms(200) # Send updates every 200 ms
             
@@ -157,6 +176,7 @@ async def handle_keyboard():
             move_right()
         elif keyboard_input == "r":
             ready_to_send = True
+            print("Ready to send")
 
 
 async def main():

@@ -45,9 +45,11 @@ evtSource.onmessage = (event) => { //wait for data from the server
 
     if (data.t === "p") {
         drawPixelOnCanvas(data.x, data.y, data.c); // Draw the pixel on the canvas
+        print("It wants me to draw a pixel")
     } 
     else if (data.t === "m") {
         moveCursorHighlight(data.x, data.y); // Move the cursor highlight
+        print("It wants me to move")
     }
 };
 
@@ -58,3 +60,30 @@ drawPixelOnCanvas(10, 10, "c");
 drawPixelOnCanvas(99, 49, "m");
 
 moveCursorHighlight(20, 25); // Test cursor highlight
+
+
+const originalConsoleLog = console.log;
+ 
+// Get the console overlay element
+const mobileConsole = document.getElementById('mobileConsole');
+ 
+
+// Override console.log to display in the overlay
+console.log = function(...args) {
+  // Log to the original console (for remote debugging)
+  originalConsoleLog.apply(console, args);
+ 
+  // Format the log message (convert objects to JSON for readability)
+  const message = args.map(arg => {
+    if (typeof arg === 'object') return JSON.stringify(arg, null, 2);
+    return arg.toString();
+  }).join(' ');
+ 
+  // Append the message to the mobile console
+  const logEntry = document.createElement('div');
+  logEntry.textContent = `[LOG] ${new Date().toLocaleTimeString()}: ${message}`;
+  mobileConsole.appendChild(logEntry);
+ 
+  // Auto-scroll to the latest log
+  mobileConsole.scrollTop = mobileConsole.scrollHeight;
+};
