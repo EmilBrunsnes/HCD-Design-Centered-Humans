@@ -1,0 +1,30 @@
+body { 
+    margin: 0; 
+    height: 100vh; 
+    background-color: #ffffff; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+}
+
+canvas { 
+    border: 2px solid #000000; 
+    image-rendering: pixelated; 
+    position: relative
+}
+
+#circle_cursor {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border: 2px solid red;
+  border-radius: 50%;
+  
+  top: 0;
+  left: 0;
+  margin-left: -20px; 
+  margin-top: -20px;
+  
+  transform: translate(-100px, -100px);
+  will-change: transform;
+}

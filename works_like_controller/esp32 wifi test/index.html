@@ -4,64 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESP32 Max Matrix</title>
-    <style>
-        body { 
-            margin: 0; 
-            height: 100vh; 
-            background-color: #ffffff; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-        }
-        canvas { 
-            border: 2px solid #000000; 
-            /* Forces the browser to keep pixels sharp, no blurring/shading */
-            image-rendering: pixelated; 
-        }
-    </style>
+    <link rel="stylesheet" href="style.css"> 
 </head>
 <body>
     <canvas id="pixelCanvas" width="800" height="400"></canvas>
+    <div id="circle_cursor"></div>
 
-    <script>
-        const canvas = document.getElementById('pixelCanvas');
-        const ctx = canvas.getContext('2d');
-        
-        // This MUST match the Python script
-        const MATRIX_WIDTH = 200; 
-        const MATRIX_HEIGHT = 100;
-
-        // We use an offscreen canvas to handle the raw pixel data
-        const offscreenCanvas = document.createElement('canvas');
-        offscreenCanvas.width = MATRIX_WIDTH;
-        offscreenCanvas.height = MATRIX_HEIGHT;
-        const offscreenCtx = offscreenCanvas.getContext('2d');
-
-        // Create a buffer for ultra-fast writing
-        const imgData = offscreenCtx.createImageData(MATRIX_WIDTH, MATRIX_HEIGHT);
-        ctx.imageSmoothingEnabled = false;
-
-        // Use EventSource instead of WebSocket for one-way streams
-        const evtSource = new EventSource('/events');
-
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.strokeStyle = "red";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(0, 0, 4, 4);
-
-        // Listen for the "data: " packets sent by the ESP32
-        evtSource.onmessage = (event) => {
-            if (event.data === "MOVE_RIGHT") {
-                velocityX = speed;
-                statusDiv.innerText = "Button Down: Moving";
-            } else if (event.data === "STOP") {
-                velocityX = 0;
-                statusDiv.innerText = "Button Up: Stopped";
-            }
-        };
-
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
