@@ -1,12 +1,7 @@
-import machine
 import network
 import uasyncio as asyncio
-from machine import Pin
-
-# Hardware setup - GPIO pins
-BUTTON_PINS = {"right": 4, "left": 5}
-button_right = Pin(BUTTON_PINS["right"], Pin.IN, Pin.PULL_UP)
-button_left = Pin(BUTTON_PINS["left"], Pin.IN, Pin.PULL_UP)
+import sys
+import time
 
 # Wifi settings
 AP_SSID = "ESP32-AP"
@@ -17,18 +12,12 @@ with open("index.html", "r") as f:
     html_content = f.read()
 
 # Position tracking
-current_position = (0,0)
+cursor_position = (0,0)
+ready_to_send = False
 
-# Matrix size definitions
-MATRIX_WIDTH = 100
-MATRIX_HEIGHT = 50
-
-def handle_button_press(pin, direction):
-    print(f"Button on pin {pin} pressed! Going {direction}.")
-    if(direction == "right"):
-        move_right()
-    elif(direction == "left"):
-        move_left()
+# Matrix settings
+MATRIX_SIZE = (100, 50)
+saved_matrix = [["w" for _ in range(MATRIX_SIZE[1])] for _ in range(MATRIX_SIZE[0])]
 
 def create_wifi_ap():
     ap = network.WLAN(network.AP_IF)
@@ -43,27 +32,37 @@ def create_wifi_ap():
     print(f"AP Ready at http://{ap.ifconfig()[0]}")
 
 
-button_right.irq(
-    trigger=Pin.IRQ_FALLING, 
-    handler= lambda pin: handle_button_press(BUTTON_PINS["right"], "right"))
-button_left.irq(
-    trigger=Pin.IRQ_FALLING, 
-    handler= lambda pin: handle_button_press(BUTTON_PINS["left"], "left"))
 
 def move_right():
-    global current_position
-    if current_position[0] < MATRIX_WIDTH - 1:
-        current_position = (current_position[0] + 1, current_position[1])
-    print(f"Moved right to {current_position}")
+    global cursor_position
+    if cursor_position[0] < MATRIX_SIZE[0] - 1:
+        cursor_position = (cursor_position[0] + 1, cursor_position[1])
+    print(f"Moved right to {cursor_position}")
 
 def move_left():
-    global current_position
-    if current_position[0] > 0:
-        current_position = (current_position[0] - 1, current_position[1])
-    print(f"Moved left to {current_position}")
+    global cursor_position
+    if cursor_position[0] > 0:
+        cursor_position = (cursor_position[0] - 1, cursor_position[1])
+    print(f"Moved left to {cursor_position}")
+
+def move_up():
+    global cursor_position
+    if cursor_position[1] > 0:
+        cursor_position = (cursor_position[0], cursor_position[1] - 1)
+    print(f"Moved up to {cursor_position}")
+
+def move_down():
+    global cursor_position
+    if cursor_position[1] < MATRIX_SIZE[1] - 1:
+        cursor_position = (cursor_position[0], cursor_position[1] + 1)
+    print(f"Moved down to {cursor_position}")
 
 
 async def handle_client(reader, writer):
+    global ready_to_send
+    last_position = (0, 0)
+    payload = ""
+
     try:
         request_line = await reader.readline() # Read the first line of the HTTP request
         if not request_line:
@@ -88,6 +87,27 @@ async def handle_client(reader, writer):
             writer.write(html_content)
             await writer.drain()
             await writer.aclose()
+        
+        elif path == "/style.css":
+            writer.write('HTTP/1.1 200 OK\r\nContent-Type: text/css\r\n\r\n')
+            try:
+                with open("style.css", "r") as f:
+                    writer.write(f.read())
+            except OSError:
+                pass # File doesn't exist
+            await writer.drain()
+            await writer.aclose()
+
+        # --- NEW CODE: Handling the JS file ---
+        elif path == "/script.js":
+            writer.write('HTTP/1.1 200 OK\r\nContent-Type: application/javascript\r\n\r\n')
+            try:
+                with open("script.js", "r") as f:
+                    writer.write(f.read())
+            except OSError:
+                pass # File doesn't exist
+            await writer.drain()
+            await writer.aclose()
 
         # Once the page is up and starts checking for updates
         elif path == "/events":
@@ -98,7 +118,15 @@ async def handle_client(reader, writer):
             await writer.drain()
 
             while True:
-                writer.write(f"data: {current_position}\n\n") # Send the current position as an SSE event
+                if not ready_to_send:
+                    if cursor_position != last_position:
+                        payload = b"{'t':'m', 'x':%d,'y':%d,'c':%d}" % (cursor_position[0], cursor_position[1], 0) # Send cursor position updates
+                        last_position = cursor_position
+
+                else:
+                    payload = b'{"t":"p","x":%d,"y":%d,"c":%d}' % (cursor_position[0], cursor_position[1], "r")
+                    ready_to_send = False
+                writer.write(payload)
                 await writer.drain()
 
                 await asyncio.sleep_ms(200) # Send updates every 200 ms
@@ -112,10 +140,29 @@ async def handle_client(reader, writer):
         print(f"Client connection error: {e}")
         await writer.aclose()
 
+async def handle_keyboard():
+    global ready_to_send
+    sreader = asyncio.StreamReader(sys.stdin)
+
+    while True:
+        keyboard_input = await sreader.read(1)  # Wait for a single character input
+
+        if keyboard_input == "w":
+            move_up()
+        elif keyboard_input == "a":
+            move_left()
+        elif keyboard_input == "s":
+            move_down()
+        elif keyboard_input == "d":
+            move_right()
+        elif keyboard_input == "r":
+            ready_to_send = True
+
 
 async def main():
     create_wifi_ap()
 
+    asyncio.create_task(handle_keyboard())
     server = await asyncio.start_server(handle_client, "0.0.0.0", 80)
 
     while True:

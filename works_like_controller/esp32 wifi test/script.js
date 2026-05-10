@@ -40,19 +40,21 @@ function moveCursorHighlight(x, y) {
 
 evtSource.onmessage = (event) => { //wait for data from the server
 
-    let data = JSON.parse(event.data); 
+    let data = JSON.parse(event.data);
+    console.log("Message received") 
 
     if (data.t === "p") {
         drawPixelOnCanvas(data.x, data.y, data.c); // Draw the pixel on the canvas
     } 
-    else if (data.t === "c") {
+    else if (data.t === "m") {
         moveCursorHighlight(data.x, data.y); // Move the cursor highlight
     }
 };
 
-drawPixelOnCanvas(50, 25, "g"); // Test pixel
-drawPixelOnCanvas(50, 30, "y"); // Test pixel
-drawPixelOnCanvas(30, 25, "b"); // Test pixel
-drawPixelOnCanvas(10, 10, "c"); // Test pixel
-drawPixelOnCanvas(99, 49, "m"); // Test pixel
+drawPixelOnCanvas(50, 25, "g"); // Test pixels
+drawPixelOnCanvas(50, 30, "y");
+drawPixelOnCanvas(30, 25, "b"); 
+drawPixelOnCanvas(10, 10, "c"); 
+drawPixelOnCanvas(99, 49, "m");
+
 moveCursorHighlight(20, 25); // Test cursor highlight
