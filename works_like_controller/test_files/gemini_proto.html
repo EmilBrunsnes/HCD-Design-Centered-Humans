@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Max Matrix</title>
+    <style>
+        body { 
+            margin: 0; 
+            height: 100vh; 
+            background-color: #ffffff; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+        canvas { 
+            border: 2px solid #000000; 
+            /* Forces the browser to keep pixels sharp, no blurring/shading */
+            image-rendering: pixelated; 
+        }
+    </style>
+</head>
+<body>
+    <canvas id="pixelCanvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('pixelCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // This MUST match the Python script
+        const MATRIX_WIDTH = 64; 
+        const MATRIX_HEIGHT = 64;
+
+        // We use an offscreen canvas to handle the raw pixel data
+        const offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = MATRIX_WIDTH;
+        offscreenCanvas.height = MATRIX_HEIGHT;
+        const offscreenCtx = offscreenCanvas.getContext('2d');
+
+        // Create a buffer for ultra-fast writing
+        const imgData = offscreenCtx.createImageData(MATRIX_WIDTH, MATRIX_HEIGHT);
+        ctx.imageSmoothingEnabled = false;
+
+        async function fetchAndUpdate() {
+            try {
+                const response = await fetch('/data');
+                // Read the raw binary stream
+                const buffer = await response.arrayBuffer(); 
+                const bytes = new Uint8Array(buffer);
+
+                let byteIndex = 0;
+                
+                // ImageData requires an Alpha channel (transparency).
+                // Our ESP32 only sends RGB, so we loop through and manually set Alpha to 255 (solid).
+                for (let i = 0; i < imgData.data.length; i += 4) {
+                    imgData.data[i]     = bytes[byteIndex++]; // R
+                    imgData.data[i + 1] = bytes[byteIndex++]; // G
+                    imgData.data[i + 2] = bytes[byteIndex++]; // B
+                    imgData.data[i + 3] = 255;                // A
+                }
+
+                // Push the pixels to the hidden canvas
+                offscreenCtx.putImageData(imgData, 0, 0);
+
+                // Stretch the hidden canvas onto our visible, bordered canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(offscreenCanvas, 0, 0, canvas.width, canvas.height);
+
+            } catch (error) {
+                console.error("Fetch error:", error);
+            }
+        }
+
+        fetchAndUpdate();
+        setInterval(fetchAndUpdate, 200); 
+    </script>
+</body>
+</html>

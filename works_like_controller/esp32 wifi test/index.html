@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ESP32 Raw Async Control</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: sans-serif;
+            margin-top: 50px;
+        }
+        canvas {
+            background-color: white;
+            border: 2px solid black; 
+        }
+        #status {
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="status">Connecting to ESP32...</div>
+    <canvas id="screen" width="600" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById('screen');
+        const ctx = canvas.getContext('2d');
+        const statusDiv = document.getElementById('status');
+
+        let x = 50;
+        let y = 180;
+        let velocityX = 0;
+        const speed = 4;
+
+        // Use EventSource instead of WebSocket for one-way streams
+        const evtSource = new EventSource('/events');
+
+        evtSource.onopen = () => {
+            statusDiv.innerText = "Connected: Waiting for button press";
+            statusDiv.style.color = "black";
+        };
+
+        evtSource.onerror = () => {
+            statusDiv.innerText = "Disconnected from ESP32";
+            statusDiv.style.color = "red";
+        };
+
+        // Listen for the "data: " packets sent by the ESP32
+        evtSource.onmessage = (event) => {
+            if (event.data === "MOVE_RIGHT") {
+                velocityX = speed;
+                statusDiv.innerText = "Button Down: Moving";
+            } else if (event.data === "STOP") {
+                velocityX = 0;
+                statusDiv.innerText = "Button Up: Stopped";
+            }
+        };
+
+        function draw() {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            x += velocityX;
+
+            if (x > canvas.width + 20) x = -40;
+
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.rect(x, y, 40, 40);
+            ctx.stroke();
+
+            requestAnimationFrame(draw);
+        }
+
+        requestAnimationFrame(draw);
+    </script>
+</body>
+</html>
