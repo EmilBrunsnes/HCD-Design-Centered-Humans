@@ -5,17 +5,17 @@
 ## SSE messages format
 
 Library with:
-**"t"** = message type (m for move and p for pixel)
-**"x" and "y"** = new positions for cursor / positions of new pixel
-**"c"** = color index
+- **"t"** = message type (m for move and p for pixel)  
+- **"x" and "y"** = new positions for cursor / positions of new pixel  
+- **"c"** = color index  
 
 ## Color indexes:
 
-"r": "red"
-"g": "green"
-"b": "blue"
-"y": "yellow"
-"c": "cyan"
-"m": "magenta"
-"w": "white"
-"k": "black"
+"r": "red"  
+"g": "green"  
+"b": "blue"  
+"y": "yellow"  
+"c": "cyan"  
+"m": "magenta"  
+"w": "white"  
+"k": "black"  
