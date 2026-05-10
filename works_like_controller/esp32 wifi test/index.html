@@ -2,52 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ESP32 Raw Async Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Max Matrix</title>
     <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-family: sans-serif;
-            margin-top: 50px;
+        body { 
+            margin: 0; 
+            height: 100vh; 
+            background-color: #ffffff; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
         }
-        canvas {
-            background-color: white;
-            border: 2px solid black; 
-        }
-        #status {
-            margin-bottom: 20px;
-            font-weight: bold;
+        canvas { 
+            border: 2px solid #000000; 
+            /* Forces the browser to keep pixels sharp, no blurring/shading */
+            image-rendering: pixelated; 
         }
     </style>
 </head>
 <body>
-
-    <div id="status">Connecting to ESP32...</div>
-    <canvas id="screen" width="600" height="400"></canvas>
+    <canvas id="pixelCanvas" width="800" height="400"></canvas>
 
     <script>
-        const canvas = document.getElementById('screen');
+        const canvas = document.getElementById('pixelCanvas');
         const ctx = canvas.getContext('2d');
-        const statusDiv = document.getElementById('status');
+        
+        // This MUST match the Python script
+        const MATRIX_WIDTH = 200; 
+        const MATRIX_HEIGHT = 100;
 
-        let x = 50;
-        let y = 180;
-        let velocityX = 0;
-        const speed = 4;
+        // We use an offscreen canvas to handle the raw pixel data
+        const offscreenCanvas = document.createElement('canvas');
+        offscreenCanvas.width = MATRIX_WIDTH;
+        offscreenCanvas.height = MATRIX_HEIGHT;
+        const offscreenCtx = offscreenCanvas.getContext('2d');
+
+        // Create a buffer for ultra-fast writing
+        const imgData = offscreenCtx.createImageData(MATRIX_WIDTH, MATRIX_HEIGHT);
+        ctx.imageSmoothingEnabled = false;
 
         // Use EventSource instead of WebSocket for one-way streams
         const evtSource = new EventSource('/events');
 
-        evtSource.onopen = () => {
-            statusDiv.innerText = "Connected: Waiting for button press";
-            statusDiv.style.color = "black";
-        };
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        evtSource.onerror = () => {
-            statusDiv.innerText = "Disconnected from ESP32";
-            statusDiv.style.color = "red";
-        };
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(0, 0, 4, 4);
 
         // Listen for the "data: " packets sent by the ESP32
         evtSource.onmessage = (event) => {
@@ -60,24 +62,6 @@
             }
         };
 
-        function draw() {
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            x += velocityX;
-
-            if (x > canvas.width + 20) x = -40;
-
-            ctx.strokeStyle = "black";
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.rect(x, y, 40, 40);
-            ctx.stroke();
-
-            requestAnimationFrame(draw);
-        }
-
-        requestAnimationFrame(draw);
     </script>
 </body>
 </html>
