@@ -24,10 +24,10 @@ Library with:
 # Flashing the esp32 with micropython
 
 - Connect the board
-- **pip install esptool**
-- while holding down `boot` button on esp: **python -m esptool --chip esp32 erase_flash**
+- _pip install esptool_
+- while holding down `boot` button on esp: _python -m esptool --chip esp32 erase_flash_
 - go to location of `micropython_flash.bin`
-- while holding down `boot` button on esp: **python -m esptool --chip esp32 --port COM5 write_flash -z 0x1000 micropython_flash.bin**
+- while holding down `boot` button on esp: _python -m esptool --chip esp32 --port COM5 write_flash -z 0x1000 micropython_flash.bin_
 
 # To use micropython in VS Code:
 
@@ -35,5 +35,5 @@ Library with:
 - Follow instructions to create a project
 - Write main code in `main.py`
 
-**To upload all files:** ctrl + shift + P then select Upload project
-**To run current file:** Click run in activity bar
+<u> **To upload all files:** </u> ctrl + shift + P then select Upload project
+<u> **To run current file:** </u> Click run in activity bar
