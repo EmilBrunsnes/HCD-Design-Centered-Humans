@@ -5,7 +5,7 @@ import sys
 import time
 
 # Wifi settings
-AP_SSID = "ESP32-AP"
+AP_SSID = "None of your damn buisness"
 AP_PASS = "password123"
 
 # Collecting the html page
@@ -142,7 +142,7 @@ async def handle_client(reader, writer):
                     last_position = cursor_position
 
                 if data_dict is not None:
-                    print("--> sent")
+                    #print("--> sent")
                     payload = json.dumps(data_dict)
                     sse_message = f"data: {payload}\n\n"
                     writer.write(sse_message.encode("utf-8"))
