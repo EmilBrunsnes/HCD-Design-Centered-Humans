@@ -6,7 +6,7 @@
 
 Library with:
 
-- **"t"** = message type (m for move, p for pixel, s for start, c for confirm)
+- **"t"** = message type (m for move, d for draw, i for intial setup)
 - **"x" and "y"** = new positions for cursor / positions of new pixel
 - **"c"** = color index
 
@@ -36,4 +36,4 @@ Library with:
 - Write main code in `main.py`
 
 **To upload all files:** ctrl + shift + P then select Upload project
-**To run current file:** Press run in activity bar
+**To run current file:** Click run in activity bar

@@ -3,6 +3,7 @@ import network
 import uasyncio as asyncio
 import sys
 import time
+from machine import Pin, ADC
 
 # Wifi settings
 AP_SSID = "None of your damn buisness"
@@ -14,11 +15,24 @@ with open("index.html", "r") as f:
 
 # Position tracking
 cursor_position = (0,0)
-ready_to_send = False
+confirmed_pixel = []
 
 # Matrix settings
 MATRIX_SIZE = (100, 50)
 saved_matrix = [["w" for _ in range(MATRIX_SIZE[1])] for _ in range(MATRIX_SIZE[0])]
+
+COLOR_CODES = {
+            "r": "red",
+            "g": "green",
+            "b": "blue",
+            "y": "yellow",
+            "c": "cyan",
+            "m": "magenta",
+            "w": "white",
+            "k": "black"
+        }
+
+current_color = ""
 
 def create_wifi_ap():
     ap = network.WLAN(network.AP_IF)
@@ -39,30 +53,39 @@ def move_right():
     if cursor_position[0] < MATRIX_SIZE[0] - 1:
         cursor_position = (cursor_position[0] + 1, cursor_position[1])
     #print(f"Moved right to {cursor_position}")
-
 def move_left():
     global cursor_position
     if cursor_position[0] > 0:
         cursor_position = (cursor_position[0] - 1, cursor_position[1])
     #print(f"Moved left to {cursor_position}")
-
 def move_up():
     global cursor_position
     if cursor_position[1] > 0:
         cursor_position = (cursor_position[0], cursor_position[1] - 1)
     #print(f"Moved up to {cursor_position}")
-
 def move_down():
     global cursor_position
     if cursor_position[1] < MATRIX_SIZE[1] - 1:
         cursor_position = (cursor_position[0], cursor_position[1] + 1)
     #print(f"Moved down to {cursor_position}")
 
+def optimize_initial_payload():
+    cols = []
+    rows = []
+    colors = []
+    for r, row_data in enumerate(saved_matrix):
+        for c, color in enumerate(row_data):
+            if color != "w":
+                cols.append(c)
+                rows.append(r)
+                colors.append(color)
+    return cols, rows, colors
 
 async def handle_client(reader, writer):
-    global ready_to_send
     last_position = (0, 0)
+    last_confirmed_pixel = []
     payload = ""
+    has_initialized = False
 
     try:
         request_line = await reader.readline() # Read the first line of the HTTP request
@@ -121,15 +144,26 @@ async def handle_client(reader, writer):
             while True:
                 data_dict = None
 
-                if ready_to_send:
+                if not has_initialized:
+                    rows, cols, colors = optimize_initial_payload()
                     data_dict = {
-                        "t": "p",
+                        "t": "i",
+                        "x": rows,
+                        "y": cols,
+                        "c": colors
+                    }
+                    print("Sent initial payload")
+                    has_initialized = True
+
+                elif last_confirmed_pixel != confirmed_pixel and confirmed_pixel != []:
+                    last_confirmed_pixel = confirmed_pixel.copy()
+                    data_dict = {
+                        "t": "d",
                         "x": cursor_position[0],
                         "y": cursor_position[1],
-                        "c": "r"
+                        "c": current_color
                     }
                     print("Sent pixel")
-                    ready_to_send = False
                 
                 elif cursor_position != last_position:
                     data_dict = {
@@ -160,7 +194,9 @@ async def handle_client(reader, writer):
         await writer.aclose()
 
 async def handle_keyboard():
-    global ready_to_send
+    global confirmed_pixel
+    global current_color
+    global saved_matrix
     sreader = asyncio.StreamReader(sys.stdin)
 
     while True:
@@ -174,9 +210,12 @@ async def handle_keyboard():
             move_down()
         elif keyboard_input == "d":
             move_right()
-        elif keyboard_input == "r":
-            ready_to_send = True
-            print("Ready to send")
+        elif keyboard_input in COLOR_CODES.keys():
+            current_color = keyboard_input
+            confirmed_pixel = [cursor_position[0], cursor_position[1], current_color]
+            saved_matrix[cursor_position[1]][cursor_position[0]] = current_color
+            print(optimize_initial_payload())
+
 
 
 async def main():
