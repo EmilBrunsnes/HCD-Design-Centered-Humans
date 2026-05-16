@@ -14,8 +14,9 @@ while True:
     print(f"X:{xValue}, Y:{yValue}, Button:{btnValue}")
     time.sleep(0.1)
 
+'''
 elif keyboard_input in COLOR_CODES.keys():
     current_color = keyboard_input
     confirmed_pixel = [cursor_position[0], cursor_position[1], current_color]
     saved_matrix[cursor_position[1]][cursor_position[0]] = current_color
-    print(optimize_initial_payload())
+    print(optimize_initial_payload())'''

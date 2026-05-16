@@ -43,14 +43,7 @@ evtSource.onmessage = (event) => { //wait for data from the server
     let data = JSON.parse(event.data);
     console.log("Message received") 
 
-    if (data.t === "i") {
-        console.log("initial data received")
-        console.log(data)
-        for (let i = 0; i < data.c.length; i++) {
-            drawPixelOnCanvas(data.x[i], data.y[i], data.c[i]); // Draw initial pixels
-        }
-    }
-    else if (data.t === "d") {
+    if (data.t === "d") {
         drawPixelOnCanvas(data.x, data.y, data.c); // Draw the pixel on the canvas
         //print("It wants me to draw a pixel")
     } 
@@ -59,9 +52,3 @@ evtSource.onmessage = (event) => { //wait for data from the server
         //print("It wants me to move")
     }
 };
-
-drawPixelOnCanvas(50, 25, "g"); // Test pixels
-drawPixelOnCanvas(50, 30, "y");
-drawPixelOnCanvas(30, 25, "b"); 
-drawPixelOnCanvas(10, 10, "c"); 
-drawPixelOnCanvas(99, 49, "m");
